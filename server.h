@@ -6,6 +6,9 @@
 #include<stdlib.h>
 #include<errno.h>
 #include <sys/stat.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
 
 #define MAX_NAME_LEN 25
@@ -14,6 +17,9 @@
 #define SUCCES_RETURN_CODE 0
 #define ERR_RETURN_CODE -1
 #define DEFUALT_PORT 1337
+#define MAX_STR_LEN 64
+#define BUFFER_SIZE 40
+#define MAX_FILE_LENGTH 2048
 
 
 
