@@ -71,13 +71,12 @@ int main(int argc, char** argv){
     socklen_t addr_size;
     addr_size = sizeof(client_addr);
 
-    bool exit = false;
-    bool logged_in = false;
-    bool quit = false;
+    bool logged_in;
+    bool quit;
     User usr_from_client;
     User *logged_usr;
 
-    while (!exit) {
+    while (1) {
 
         new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
 
@@ -108,6 +107,8 @@ int main(int argc, char** argv){
         char* files_list;
         char file_name[MAX_NAME_LEN];
         char file_data[MAX_FILE_LENGTH];
+
+        // Get commands from user until it quits
 
         while (!quit) {
             recv(new_sock, &usr_command, sizeof(int), 0);
@@ -164,7 +165,7 @@ int main(int argc, char** argv){
 
     }
 
-    return 0;
+    return SUCCESS_RETURN_CODE;
 }
 
 int getNumOfFiles(User user) {

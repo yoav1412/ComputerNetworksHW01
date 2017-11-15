@@ -1,30 +1,34 @@
 #include "client.h"
 
 int main(int argc, char** argv){
-    if (argc > 2){
-        printf("Error: wrong number of args!\n");
-        return ERR_RETURN_CODE;
-    }
+    int arg_to_int;
     char hostname[MAX_HOST_NAME] = DEFAULT_HOST_NAME;
     int port = DEFAULT_PORT;
-    if (argc == 2){
-        strcpy(hostname,strtok(argv[1]," "));
-        char* portStr = strtok(NULL," ");
-        if (portStr == NULL){
-            printf("Error: wrong number of args!\n");
+
+    if (argc > 3) {
+        printf("Error: wrong number of arguments!\n");
+        return ERR_RETURN_CODE;
+    }
+
+    if (argc >= 2) { // get hostname from argument
+        strcpy(hostname, argv[1]);
+    }
+    if (argc == 3) { // get port from argument
+        arg_to_int = atoi(argv[2]);
+        if (arg_to_int == 0) {
+            printf("Error: could not set port, check the argument and try again.");
             return ERR_RETURN_CODE;
         }
-        port = atoi(portStr);
     }
+
+    // Prepare socket and necessary structs
 
     int sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
         return ERR_RETURN_CODE;
     }
 
-//    struct sockaddr_in dest_address;
     struct addrinfo hints, *servinfo, *p;
-    int res;
     char port_str[MAX_STR_LEN];
     sprintf(port_str, "%d", port);
 
@@ -32,8 +36,7 @@ int main(int argc, char** argv){
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-
-    if ((res = getaddrinfo(hostname, port_str, &hints, &servinfo)) != 0) {
+    if ((getaddrinfo(hostname, port_str, &hints, &servinfo)) != 0) {
         printf("Error in getaddrinfo\n");
         return ERR_RETURN_CODE;
     }
@@ -43,7 +46,7 @@ int main(int argc, char** argv){
             printf("Error cinnecting socket\n");
             continue;
         }
-        break; // Connection succesful
+        break; // Connection successful
     }
 
     if (p == NULL) {
@@ -53,11 +56,16 @@ int main(int argc, char** argv){
 
     freeaddrinfo(servinfo);
 
-    // receive hello
+
+    // Connection is successful, start communicating with client
+
+    // Get "hello" message
     char input[MAX_STR_LEN];
     recv(sock, input, MAX_STR_LEN, 0);
     printf("%s", input);
 
+
+    // Login screen
     bool login_successful;
     char username_input[MAX_NAME_LEN];
     char password_input[MAX_NAME_LEN];
@@ -93,12 +101,14 @@ int main(int argc, char** argv){
         }
     }
 
-    // Logged in. let's get the number of files in our folder
+    // Logged in successfully. let's get the number of files in our folder
     int num_of_files_in_folder;
     recv(sock, &num_of_files_in_folder, sizeof(int), 0);
     printf("Hi %s, you have %d files stored.\n", username_input, num_of_files_in_folder);
 
-    // Get commands from user
+
+    // While not quitting, keep the connection on and get commands from user
+
     bool quit;
     char usr_command_str[MAX_STR_LEN];
     char list_of_files[MAX_NUM_OF_FILES*MAX_NAME_LEN];
