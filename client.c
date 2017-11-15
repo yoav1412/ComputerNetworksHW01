@@ -25,6 +25,7 @@ int main(int argc, char** argv){
 
     int sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock == -1) {
+        printf("Error creating socket\n");
         return ERR_RETURN_CODE;
     }
 
