@@ -4,16 +4,20 @@
 
 
 int main(int argc, char** argv){
-    int port;
+    int port = DEFUALT_PORT;
+    int input_port;
     if (argc < 3 || argc > 4){
         printf("Error: wrong number of args\n");
         return 1;
     }
-    if (argc == 4){
-        port = atoi(argv[3]); //todo: check if atoi succeeded
-    } else {
-        port = DEFUALT_PORT;
+    if (argc == 4) {
+        input_port = atoi(argv[3]);
+        if (input_port == 0)
+            printf("Error: setting of port number failed, continuing with default value %d\n", port);
+        else
+            port = input_port;
     }
+
     if (makeUsersList(argv[1]) == ERR_RETURN_CODE){
         return ERR_RETURN_CODE;
     };
@@ -21,6 +25,9 @@ int main(int argc, char** argv){
     if (openDirectories(dir_path) == ERR_RETURN_CODE){
         return ERR_RETURN_CODE;
     };
+
+
+    //Open socket and listen
 
     int sock = 0;
     struct addrinfo hints, *servinfo, *p;
@@ -33,17 +40,18 @@ int main(int argc, char** argv){
     hints.ai_flags = AI_PASSIVE;
 
     if ((getaddrinfo(NULL, port_str, &hints, &servinfo)) != 0) {
-        printf("ERRRRRROROROR"); //TODO
+        printf("Error in getaddrinfo\n");
+        return ERR_RETURN_CODE;
     }
 
     for (p = servinfo; p != NULL; p = p->ai_next) {
         if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            printf("EROROROROR"); //TODO
+            printf("Error creating socket\n");
             continue;
         }
         if (bind(sock, p->ai_addr, p->ai_addrlen) == -1) {
             close(sock);
-            printf("ERORORORO"); //TODO
+            printf("Error binding socket\n");
             continue;
         }
         break; // if successful, stop the loop.
@@ -56,7 +64,7 @@ int main(int argc, char** argv){
 
     freeaddrinfo(servinfo);
 
-    listen(sock, 1); //TODO: change 1 to many?
+    listen(sock, BACKLOG_SIZE);
 
     int new_sock;
     struct sockaddr_storage client_addr;
@@ -223,7 +231,7 @@ bool folderExists(char* dirpath) {
     if (dir != NULL) {
         closedir(dir);
         return true;
-    } // TODO: opendir might fail by another i/o cause that we are not checking.. ignore that fact?
+    }
     return false;
 }
 
@@ -251,8 +259,6 @@ char* getListOfFiles(char folder_path[MAX_DIRPATH_LEN]) {
             strcat(list_of_files, strcat(entry->d_name, "\n"));
         }
     }
-
-    printf("files list: %s", list_of_files); //TODO: remove
 
     closedir(dirp);
 

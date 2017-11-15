@@ -32,15 +32,15 @@ int main(int argc, char** argv){
     hints.ai_family = PF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-//    dest_address.sin_family = AF_INET;
-//    dest_address.sin_port = htons((uint16_t) port);
+
     if ((res = getaddrinfo(hostname, port_str, &hints, &servinfo)) != 0) {
-        printf("EROROROROROR"); //TODO
+        printf("Error in getaddrinfo\n");
+        return ERR_RETURN_CODE;
     }
 
     for (p = servinfo; p!= NULL; p = p->ai_next) {
         if (connect(sock, p->ai_addr, p->ai_addrlen) == -1) {
-            printf("EROROROROR"); //TODO
+            printf("Error cinnecting socket\n");
             continue;
         }
         break; // Connection succesful
@@ -213,4 +213,3 @@ char* fileToStr(char file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {
 
     return file_text;
 }
-

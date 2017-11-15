@@ -1,6 +1,8 @@
 #include "aux.h"
 
 #define HELLO_STR "Welcome! Please log in.\n"
+#define BACKLOG_SIZE 5
+
 
 typedef struct User {
     char username[MAX_NAME_LEN];
