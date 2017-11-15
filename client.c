@@ -143,10 +143,15 @@ int main(int argc, char** argv){
             char file_name[MAX_NAME_LEN];
             strcpy(arguments, usr_command_str + strlen("add_file "));
             strcpy(path_to_file, strtok(arguments, " "));
-            strcpy(file_name, strtok(NULL, "\n"));
+            char* pathArg;
+            if ((pathArg = strtok(NULL, "\n")) == NULL){
+                printf("Error: wrong arguments.\n");
+                continue;
+            }
+            strcpy(file_name, pathArg);
             file_data = fileToStr(path_to_file);
             if (file_data == NULL) {
-                printf("Error adding file.\n");
+                printf("Error: wrong arguments.\n");
                 continue;
             }
 
