@@ -166,7 +166,7 @@ int main(int argc, char** argv){
         } else if (strncmp(usr_command_str, "get_file ",strlen("get_file ")) == 0) {
             char arguments[MAX_DIRPATH_LEN + MAX_NAME_LEN];
             char file_name[MAX_NAME_LEN];
-            char path_to_save[MAX_DIRPATH_LEN]; //todo: for the document - the path should contain "\" at end
+            char path_to_save[MAX_DIRPATH_LEN];
             strcpy(arguments, usr_command_str + strlen("get_file "));
             strcpy(file_name, strtok(arguments, " "));
             strcpy(path_to_save, strtok(NULL, "\n"));
