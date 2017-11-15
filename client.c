@@ -174,11 +174,15 @@ int main(int argc, char** argv){
             send(sock, &GET_FILE_CMND, sizeof(int), 0);
             send(sock, file_name, sizeof(file_name), 0); // Send required file name
 
+            recv(sock, &server_response, sizeof(int), 0);
+            if (server_response == OPERATION_FAILED) {
+                printf("Error while reading file in server.");
+                continue;
+            }
+
             char data[MAX_FILE_LENGTH];
             recv(sock, data, MAX_FILE_LENGTH, 0);
-            if (saveDataToFile(data, path_to_save) == OPERATION_SUCCESSFUL)
-                printf("File got successfully.\n");
-            else
+            if (saveDataToFile(data, path_to_save) == OPERATION_FAILED)
                 printf("Error getting file.\n");
 
         // quit

@@ -153,7 +153,14 @@ int main(int argc, char** argv){
                 strcat(full_file_path, file_name);
 
                 char* data;
+                int successful = OPERATION_SUCCESSFUL;
                 data = fileToStr(full_file_path);
+                if (data == NULL) {
+                    successful = OPERATION_FAILED;
+                    send(new_sock, &successful, sizeof(int), 0);
+                    continue;
+                }
+                send(new_sock, &successful, sizeof(int), 0);
                 send(new_sock, data, MAX_FILE_LENGTH, 0);
                 free(data);
 
