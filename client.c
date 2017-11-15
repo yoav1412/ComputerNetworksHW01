@@ -6,7 +6,7 @@ int main(int argc, char** argv){
         return ERR_RETURN_CODE;
     }
     char hostname[MAX_HOST_NAME] = DEFAULT_HOST_NAME;
-    int port = DEFUALT_PORT;
+    int port = DEFAULT_PORT;
     if (argc == 2){
         strcpy(hostname,strtok(argv[1]," "));
         char* portStr = strtok(NULL," ");
@@ -55,7 +55,7 @@ int main(int argc, char** argv){
 
     // receive hello
     char input[MAX_STR_LEN];
-    recv(sock, input, BUFFER_SIZE, 0);
+    recv(sock, input, MAX_STR_LEN, 0);
     printf("%s", input);
 
     bool login_successful;
@@ -183,6 +183,7 @@ int main(int argc, char** argv){
     }
 
     close(sock);
+    return SUCCESS_RETURN_CODE;
 }
 
 int saveDataToFile(char data[MAX_FILE_LENGTH], char path_to_save[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {

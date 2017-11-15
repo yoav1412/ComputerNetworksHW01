@@ -4,7 +4,7 @@
 
 
 int main(int argc, char** argv){
-    int port = DEFUALT_PORT;
+    int port = DEFAULT_PORT;
     int input_port;
     if (argc < 3 || argc > 4){
         printf("Error: wrong number of args\n");
@@ -82,7 +82,7 @@ int main(int argc, char** argv){
         new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
 
         // Send hello message to client
-        send(new_sock, HELLO_STR ,BUFFER_SIZE, 0);
+        send(new_sock, HELLO_STR ,strlen(HELLO_STR), 0);
 
         logged_in = false;
         quit = false;
@@ -141,7 +141,7 @@ int main(int argc, char** argv){
                 strcat(full_file_path, "/");
                 strcat(full_file_path, file_name);
 
-                int created = saveDataToFile(full_file_path, file_data);
+                int created = saveDataToFile(file_data, full_file_path);
                 send(new_sock, &created, sizeof(int), 0);
 
             } else if (usr_command == GET_FILE_CMND) {
@@ -205,12 +205,12 @@ int makeUsersList(char* userFilePath){
         i++;
     }
     numUsers = i;
-    return SUCCES_RETURN_CODE;
+    return SUCCESS_RETURN_CODE;
 }
 
 int openDirectories(char* dirpath) {
-
-    for (int i=0; i< numUsers; i++) {
+    int i;
+    for (i=0; i< numUsers; i++) {
         char tempstr[MAX_DIRPATH_LEN];
         strcpy(tempstr, dirpath);
         char* directoryToOpen = strcat(tempstr,users[i].username);
@@ -223,7 +223,7 @@ int openDirectories(char* dirpath) {
             return ERR_RETURN_CODE;
         };
     }
-    return SUCCES_RETURN_CODE;
+    return SUCCESS_RETURN_CODE;
 }
 
 bool folderExists(char* dirpath) {
@@ -236,7 +236,8 @@ bool folderExists(char* dirpath) {
 }
 
 bool checkCredentials(User usr_from_client, User **logged_usr) {
-    for (int i=0; i < numUsers; i++ ){
+    int i;
+    for (i=0; i < numUsers; i++ ){
         if ((strcmp(users[i].username,usr_from_client.username) == 0) && (strcmp(users[i].password, usr_from_client.password) == 0)) {
             *logged_usr = &(users[i]);
             return true;
