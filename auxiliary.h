@@ -22,16 +22,20 @@
 #define DEFAULT_PORT 1337
 #define MAX_STR_LEN 64
 
-int LIST_OF_FILES_CMND = 1;
-int DELETE_FILE_CMND = 2;
-int ADD_FILE_CMND = 3;
-int GET_FILE_CMND = 4;
-int QUIT_CMND = 5;
+extern int LIST_OF_FILES_CMND;
+extern int DELETE_FILE_CMND;
+extern int ADD_FILE_CMND;
+extern int GET_FILE_CMND;
+extern int QUIT_CMND;
 
-int OPERATION_SUCCESSFUL = 1;
-int OPERATION_FAILED = -1;
+extern int OPERATION_SUCCESSFUL;
+extern int OPERATION_FAILED;
 
-int LOGIN_FAILED_MSG = -1;
-int LOGIN_SUCCESS_MSG = 1;
+extern int LOGIN_FAILED_MSG;
+extern int LOGIN_SUCCESS_MSG;
 
-
+char* strmove(char* str1, char* str2);
+char* fileToStr(char file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN]);
+int saveDataToFile(char data[MAX_FILE_LENGTH], char path_to_save[MAX_DIRPATH_LEN + MAX_NAME_LEN]);
+int sendStr(int sock, char* str);
+int recvStr(int sock, char* str);

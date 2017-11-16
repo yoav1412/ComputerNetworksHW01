@@ -81,15 +81,15 @@ int main(int argc, char** argv){
         new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
 
         // Send hello message to client
-        send(new_sock, HELLO_STR, strlen(HELLO_STR)+1, 0);
+        sendStr(new_sock, HELLO_STR);
 
         logged_in = false;
         quit = false;
 
         // Login phase
         while (!quit && !logged_in) {
-            recv(new_sock, usr_from_client.username, MAX_NAME_LEN, 0);
-            recv(new_sock, usr_from_client.password, MAX_NAME_LEN, 0);
+            recvStr(new_sock, usr_from_client.username);
+            recvStr(new_sock, usr_from_client.password);
 
             if (checkCredentials(usr_from_client, &logged_usr)) {
                 logged_in = true;
@@ -119,11 +119,11 @@ int main(int argc, char** argv){
             } else if (usr_command == LIST_OF_FILES_CMND) {
                 char* files_list;
                 files_list = getListOfFiles(logged_usr->folder_path);
-                send(new_sock, files_list, strlen(files_list)+1, 0);
+                sendStr(new_sock, files_list);
                 free(files_list);
 
             } else if (usr_command == DELETE_FILE_CMND) {
-                recv(new_sock, file_name, MAX_STR_LEN, 0); // receive the argument: file name
+                recvStr(new_sock, file_name); // receive the argument: file name
 
                 file_name[strlen(file_name)-1] = '\0';
                 char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
@@ -135,8 +135,8 @@ int main(int argc, char** argv){
                 send(new_sock, &deleted, sizeof(int), 0);
 
             } else if (usr_command == ADD_FILE_CMND) {
-                recv(new_sock, file_name, sizeof(file_name), 0); // Get required file name
-                recv(new_sock, file_data, sizeof(file_data), 0); // Get the file data
+                recvStr(new_sock, file_name); // Get required file name
+                recvStr(new_sock, file_data); // Get the file data
 
                 char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
                 strcpy(full_file_path, logged_usr->folder_path);
@@ -147,7 +147,7 @@ int main(int argc, char** argv){
                 send(new_sock, &created, sizeof(int), 0);
 
             } else if (usr_command == GET_FILE_CMND) {
-                recv(new_sock, file_name, sizeof(file_name), 0); // Get required file name
+                recvStr(new_sock, file_name); // Get required file name
                 char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
                 strcpy(full_file_path, logged_usr->folder_path);
                 strcat(full_file_path, "/");
@@ -162,7 +162,7 @@ int main(int argc, char** argv){
                     continue;
                 }
                 send(new_sock, &successful, sizeof(int), 0);
-                send(new_sock, data, strlen(data)+1, 0);
+                sendStr(new_sock, data);
                 free(data);
 
             } else if (usr_command == QUIT_CMND) {
@@ -279,31 +279,3 @@ int deleteFile(char file_path[MAX_NAME_LEN]) {
     return OPERATION_SUCCESSFUL;
 }
 
-int saveDataToFile(char data[MAX_FILE_LENGTH], char path_to_save[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {
-    FILE* opf;
-    opf = fopen(path_to_save, "w");
-    if (opf == NULL)
-        return OPERATION_FAILED;
-
-    if (fprintf(opf, "%s", data) < 0) {
-        fclose(opf);
-        return OPERATION_FAILED;
-    }
-    fclose(opf);
-    chmod(path_to_save, 0777);
-    return OPERATION_SUCCESSFUL;
-}
-
-
-char* fileToStr(char file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {
-    char* file_text = (char*)malloc(sizeof(char)*MAX_FILE_LENGTH);
-    FILE* fp = fopen(file_path, "r");
-    if (fp == NULL)
-        return NULL;
-
-    size_t num_read = fread(file_text, sizeof(char), MAX_FILE_LENGTH, fp);
-    if (num_read < 1)
-        return NULL;
-
-    return file_text;
-}
