@@ -1,4 +1,4 @@
-#include "aux.h"
+#include "auxiliary.h"
 
 #define HELLO_STR "Welcome! Please log in.\n"
 #define BACKLOG_SIZE 5
