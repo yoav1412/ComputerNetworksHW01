@@ -19,6 +19,7 @@ int main(int argc, char** argv){
             printf("Error: could not set port, check the argument and try again.");
             return ERR_RETURN_CODE;
         }
+        port = arg_to_int;
     }
 
     // Prepare socket and necessary structs
@@ -173,13 +174,13 @@ int main(int argc, char** argv){
             char file_name[MAX_NAME_LEN];
             strcpy(arguments, usr_command_str + strlen("get_file "));
             strcpy(file_name, strtok(arguments, " "));
-            
+
             char* path_arg;
             if ((path_arg = strtok(NULL, "\n")) == NULL){
                 printf("Error: wrong arguments.\n");
                 continue;
             }
-
+            checkPathFormat(path_arg);
             send(sock, &GET_FILE_CMND, sizeof(int), 0);
             send(sock, file_name, sizeof(file_name), 0); // Send required file name
 
@@ -193,7 +194,7 @@ int main(int argc, char** argv){
             recv(sock, data, MAX_FILE_LENGTH, 0);
             strcat(path_arg, file_name);
             if (saveDataToFile(data, path_arg) == OPERATION_FAILED)
-                printf("Error getting file.\n");
+                printf("Error saving file.\n");
 
         // quit
         } else if (strcmp(usr_command_str, "quit\n") == 0) {
@@ -237,4 +238,11 @@ char* fileToStr(char file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {
         return NULL;
 
     return file_text;
+}
+
+void checkPathFormat(char* path){
+    if (path[strlen(path)-1] == '/'){
+        return;
+    }
+    strcat(path, "/");
 }

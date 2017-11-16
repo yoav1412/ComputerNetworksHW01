@@ -46,19 +46,19 @@ int main(int argc, char** argv){
 
     for (p = servinfo; p != NULL; p = p->ai_next) {
         if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            printf("Error creating socket\n");
             continue;
         }
+        int enable = 1;
+        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int) );
         if (bind(sock, p->ai_addr, p->ai_addrlen) == -1) {
             close(sock);
-            printf("Error binding socket\n");
             continue;
         }
         break; // if successful, stop the loop.
     }
 
     if (p == NULL) {
-        printf("Failed to bind socket");
+        printf("Failed to connect");
         return ERR_RETURN_CODE;
     }
 
@@ -290,8 +290,8 @@ int saveDataToFile(char data[MAX_FILE_LENGTH], char path_to_save[MAX_DIRPATH_LEN
         fclose(opf);
         return OPERATION_FAILED;
     }
-
     fclose(opf);
+    chmod(path_to_save, 0777);
     return OPERATION_SUCCESSFUL;
 }
 

@@ -7,4 +7,4 @@ server: aux.h server.h server.c
     gcc -Wall -g -o file_server server.c
 
 clean:
-    -rm *.o file_client file_server
+    -rm -f *.o file_client file_server
