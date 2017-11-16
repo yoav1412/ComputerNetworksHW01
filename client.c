@@ -122,7 +122,7 @@ int main(int argc, char** argv){
 
         // list_of_files
         if (strcmp(usr_command_str, "list_of_files\n") == 0) {
-            char list_of_files[MAX_NUM_OF_FILES*MAX_NAME_LEN];
+            char* list_of_files = (char*)calloc(MAX_NUM_OF_FILES*MAX_NAME_LEN, sizeof(char));
             send(sock, &LIST_OF_FILES_CMND, sizeof(int), 0);
             recv(sock, list_of_files, MAX_NUM_OF_FILES*MAX_NAME_LEN, 0);
             printf("%s", list_of_files);

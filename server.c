@@ -101,7 +101,8 @@ int main(int argc, char** argv){
 
         // Logged in successfully.
         // Send number of files for the logged in user
-        send(new_sock, &(logged_usr->num_of_files), sizeof(int), 0);
+        int user_num_files = getNumOfFiles(*logged_usr);
+        send(new_sock, &user_num_files, sizeof(int), 0);
 
         int usr_command;
         char file_name[MAX_NAME_LEN];
@@ -208,7 +209,6 @@ int makeUsersList(char* userFilePath){
     while (fgets(str,2*MAX_NAME_LEN +2,users_file) != NULL) {
         strcpy(user.username, strtok(str,"\t"));
         strcpy(user.password, strtok(NULL,"\n"));
-        user.num_of_files = 0;
         users[i] = user;
         i++;
     }
@@ -223,8 +223,7 @@ int openDirectories(char* dirpath) {
         strcpy(tempstr, dirpath);
         char* directoryToOpen = strcat(tempstr,users[i].username);
         strcpy(users[i].folder_path, directoryToOpen);
-        if (folderExists(directoryToOpen)) { // If exists, get number of files in the directory
-            users[i].num_of_files = getNumOfFiles(users[i]);
+        if (folderExists(directoryToOpen)) { // If exists
             continue;
         }
         if (mkdir(directoryToOpen, 0777) != 0) {
