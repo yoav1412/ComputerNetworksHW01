@@ -58,7 +58,7 @@ int main(int argc, char** argv){
     }
 
     if (p == NULL) {
-        printf("Failed to connect");
+        printf("Failed to connect.\n");
         return ERR_RETURN_CODE;
     }
 
@@ -104,7 +104,6 @@ int main(int argc, char** argv){
         send(new_sock, &(logged_usr->num_of_files), sizeof(int), 0);
 
         int usr_command;
-        char* files_list;
         char file_name[MAX_NAME_LEN];
         char file_data[MAX_FILE_LENGTH];
 
@@ -117,6 +116,7 @@ int main(int argc, char** argv){
                 quit = true;
 
             } else if (usr_command == LIST_OF_FILES_CMND) {
+                char* files_list;
                 files_list = getListOfFiles(logged_usr->folder_path);
                 send(new_sock, files_list, MAX_NAME_LEN * MAX_NUM_OF_FILES, 0);
                 free(files_list);

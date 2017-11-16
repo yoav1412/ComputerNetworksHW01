@@ -113,7 +113,6 @@ int main(int argc, char** argv){
 
     bool quit;
     char usr_command_str[MAX_STR_LEN];
-    char list_of_files[MAX_NUM_OF_FILES*MAX_NAME_LEN];
     char* file_data;
     int server_response;
 
@@ -123,8 +122,9 @@ int main(int argc, char** argv){
 
         // list_of_files
         if (strcmp(usr_command_str, "list_of_files\n") == 0) {
+            char list_of_files[MAX_NUM_OF_FILES*MAX_NAME_LEN];
             send(sock, &LIST_OF_FILES_CMND, sizeof(int), 0);
-            recv(sock, &list_of_files, MAX_NUM_OF_FILES*MAX_NAME_LEN, 0);
+            recv(sock, list_of_files, MAX_NUM_OF_FILES*MAX_NAME_LEN, 0);
             printf("%s", list_of_files);
 
         // delete_file
