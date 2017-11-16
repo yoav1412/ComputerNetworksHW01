@@ -144,12 +144,12 @@ int main(int argc, char** argv){
             char file_name[MAX_NAME_LEN];
             strcpy(arguments, usr_command_str + strlen("add_file "));
             strcpy(path_to_file, strtok(arguments, " "));
-            char* pathArg;
-            if ((pathArg = strtok(NULL, "\n")) == NULL){
+            char* filename_arg;
+            if ((filename_arg = strtok(NULL, "\n")) == NULL){
                 printf("Error: wrong arguments.\n");
                 continue;
             }
-            strcpy(file_name, pathArg);
+            strcpy(file_name, filename_arg);
             file_data = fileToStr(path_to_file);
             if (file_data == NULL) {
                 printf("Error: wrong arguments.\n");
@@ -171,11 +171,14 @@ int main(int argc, char** argv){
         } else if (strncmp(usr_command_str, "get_file ",strlen("get_file ")) == 0) {
             char arguments[MAX_DIRPATH_LEN + MAX_NAME_LEN];
             char file_name[MAX_NAME_LEN];
-            char path_to_save[MAX_DIRPATH_LEN];
             strcpy(arguments, usr_command_str + strlen("get_file "));
             strcpy(file_name, strtok(arguments, " "));
-            strcpy(path_to_save, strtok(NULL, "\n"));
-            strcat(path_to_save, file_name);
+            
+            char* path_arg;
+            if ((path_arg = strtok(NULL, "\n")) == NULL){
+                printf("Error: wrong arguments.\n");
+                continue;
+            }
 
             send(sock, &GET_FILE_CMND, sizeof(int), 0);
             send(sock, file_name, sizeof(file_name), 0); // Send required file name
@@ -188,7 +191,8 @@ int main(int argc, char** argv){
 
             char data[MAX_FILE_LENGTH];
             recv(sock, data, MAX_FILE_LENGTH, 0);
-            if (saveDataToFile(data, path_to_save) == OPERATION_FAILED)
+            strcat(path_arg, file_name);
+            if (saveDataToFile(data, path_arg) == OPERATION_FAILED)
                 printf("Error getting file.\n");
 
         // quit
