@@ -81,7 +81,7 @@ int main(int argc, char** argv){
         new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
 
         // Send hello message to client
-        send(new_sock, HELLO_STR ,strlen(HELLO_STR), 0);
+        send(new_sock, HELLO_STR ,MAX_STR_LEN, 0);
 
         logged_in = false;
         quit = false;
@@ -119,7 +119,7 @@ int main(int argc, char** argv){
             } else if (usr_command == LIST_OF_FILES_CMND) {
                 char* files_list;
                 files_list = getListOfFiles(logged_usr->folder_path);
-                send(new_sock, files_list, MAX_NAME_LEN * MAX_NUM_OF_FILES, 0);
+                send(new_sock, files_list, MAX_NAME_LEN * MAX_NUM_OF_FILES + 1, 0);
                 free(files_list);
 
             } else if (usr_command == DELETE_FILE_CMND) {
