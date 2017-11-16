@@ -130,6 +130,7 @@ int main(int argc, char** argv){
             if (recvStr(sock, list_of_files) == ERR_RETURN_CODE)
                 return ERR_RETURN_CODE;
             printf("%s", list_of_files);
+            free(list_of_files);
 
         // delete_file
         } else if (strncmp(usr_command_str, "delete_file ", strlen("delete_file ")) == 0) {
