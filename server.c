@@ -81,15 +81,18 @@ int main(int argc, char** argv){
         new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
 
         // Send hello message to client
-        sendStr(new_sock, HELLO_STR);
+        if (sendStr(new_sock, HELLO_STR) == ERR_RETURN_CODE)
+            return ERR_RETURN_CODE;
 
         logged_in = false;
         quit = false;
 
         // Login phase
         while (!quit && !logged_in) {
-            recvStr(new_sock, usr_from_client.username);
-            recvStr(new_sock, usr_from_client.password);
+            if (recvStr(new_sock, usr_from_client.username) == ERR_RETURN_CODE)
+                return ERR_RETURN_CODE;
+            if (recvStr(new_sock, usr_from_client.password) == ERR_RETURN_CODE)
+                return ERR_RETURN_CODE;
 
             if (checkCredentials(usr_from_client, &logged_usr)) {
                 logged_in = true;
@@ -119,11 +122,13 @@ int main(int argc, char** argv){
             } else if (usr_command == LIST_OF_FILES_CMND) {
                 char* files_list;
                 files_list = getListOfFiles(logged_usr->folder_path);
-                sendStr(new_sock, files_list);
+                if (sendStr(new_sock, files_list) == ERR_RETURN_CODE)
+                    return ERR_RETURN_CODE;
                 free(files_list);
 
             } else if (usr_command == DELETE_FILE_CMND) {
-                recvStr(new_sock, file_name); // receive the argument: file name
+                if (recvStr(new_sock, file_name) == ERR_RETURN_CODE) // receive the argument: file name
+                    return ERR_RETURN_CODE;
 
                 file_name[strlen(file_name)-1] = '\0';
                 char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
@@ -135,8 +140,10 @@ int main(int argc, char** argv){
                 send(new_sock, &deleted, sizeof(int), 0);
 
             } else if (usr_command == ADD_FILE_CMND) {
-                recvStr(new_sock, file_name); // Get required file name
-                recvStr(new_sock, file_data); // Get the file data
+                if (recvStr(new_sock, file_name) == ERR_RETURN_CODE) // Get required file name
+                    return ERR_RETURN_CODE;
+                if (recvStr(new_sock, file_data) == ERR_RETURN_CODE) // Get the file data
+                    return ERR_RETURN_CODE;
 
                 char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
                 strcpy(full_file_path, logged_usr->folder_path);
@@ -147,7 +154,8 @@ int main(int argc, char** argv){
                 send(new_sock, &created, sizeof(int), 0);
 
             } else if (usr_command == GET_FILE_CMND) {
-                recvStr(new_sock, file_name); // Get required file name
+                if (recvStr(new_sock, file_name) == ERR_RETURN_CODE) // Get required file name
+                    return ERR_RETURN_CODE;
                 char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
                 strcpy(full_file_path, logged_usr->folder_path);
                 strcat(full_file_path, "/");
@@ -162,7 +170,8 @@ int main(int argc, char** argv){
                     continue;
                 }
                 send(new_sock, &successful, sizeof(int), 0);
-                sendStr(new_sock, data);
+                if (sendStr(new_sock, data) == ERR_RETURN_CODE)
+                    return ERR_RETURN_CODE;
                 free(data);
 
             } else if (usr_command == QUIT_CMND) {

@@ -63,7 +63,8 @@ int main(int argc, char** argv){
 
     // Get "hello" message
     char input[MAX_STR_LEN];
-    recvStr(sock, input);
+    if (recvStr(sock, input) == ERR_RETURN_CODE)
+        return ERR_RETURN_CODE;
     printf("%s", input);
 
 
@@ -92,8 +93,10 @@ int main(int argc, char** argv){
         strmove(password_input, password_input + 10);
         password_input[strlen(password_input) - 1] = '\0';
 
-        sendStr(sock, username_input);
-        sendStr(sock, password_input);
+        if (sendStr(sock, username_input) == ERR_RETURN_CODE)
+            return ERR_RETURN_CODE;
+        if (sendStr(sock, password_input) == ERR_RETURN_CODE)
+        return ERR_RETURN_CODE;
 
         recv(sock, &msg, sizeof(int), 0);
         if (msg == LOGIN_SUCCESS_MSG) {
@@ -124,13 +127,15 @@ int main(int argc, char** argv){
         if (strcmp(usr_command_str, "list_of_files\n") == 0) {
             char* list_of_files = (char*)calloc(MAX_NUM_OF_FILES*MAX_NAME_LEN, sizeof(char));
             send(sock, &LIST_OF_FILES_CMND, sizeof(int), 0);
-            recvStr(sock, list_of_files);
+            if (recvStr(sock, list_of_files) == ERR_RETURN_CODE)
+                return ERR_RETURN_CODE;
             printf("%s", list_of_files);
 
         // delete_file
         } else if (strncmp(usr_command_str, "delete_file ", strlen("delete_file ")) == 0) {
             send(sock, &DELETE_FILE_CMND, sizeof(int), 0);
-            sendStr(sock, usr_command_str + strlen("delete_file "));
+            if (sendStr(sock, usr_command_str + strlen("delete_file ")) == ERR_RETURN_CODE)
+                return ERR_RETURN_CODE;
 
             recv(sock, &server_response, sizeof(int), 0);
             if (server_response == OPERATION_SUCCESSFUL)
@@ -158,8 +163,10 @@ int main(int argc, char** argv){
             }
 
             send(sock, &ADD_FILE_CMND, sizeof(int), 0);
-            sendStr(sock, file_name); // Send required file name
-            sendStr(sock, file_data); // Send the file data
+            if (sendStr(sock, file_name) == ERR_RETURN_CODE) // Send required file name
+                return ERR_RETURN_CODE;
+            if (sendStr(sock, file_data) == ERR_RETURN_CODE) // Send the file data
+                return ERR_RETURN_CODE;
             free(file_data);
 
             recv(sock, &server_response, sizeof(int), 0);
@@ -182,7 +189,8 @@ int main(int argc, char** argv){
             }
             checkPathFormat(path_arg);
             send(sock, &GET_FILE_CMND, sizeof(int), 0);
-            sendStr(sock, file_name); // Send required file name
+            if (sendStr(sock, file_name) == ERR_RETURN_CODE) // Send required file name
+                return ERR_RETURN_CODE;
 
             recv(sock, &server_response, sizeof(int), 0);
             if (server_response == OPERATION_FAILED) {
@@ -191,7 +199,8 @@ int main(int argc, char** argv){
             }
 
             char data[MAX_FILE_LENGTH];
-            recvStr(sock, data);
+            if (recvStr(sock, data) == ERR_RETURN_CODE)
+                return ERR_RETURN_CODE;
             strcat(path_arg, file_name);
             if (saveDataToFile(data, path_arg) == OPERATION_FAILED)
                 printf("Error saving file.\n");
