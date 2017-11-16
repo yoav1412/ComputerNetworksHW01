@@ -119,7 +119,7 @@ int main(int argc, char** argv){
             } else if (usr_command == LIST_OF_FILES_CMND) {
                 char* files_list;
                 files_list = getListOfFiles(logged_usr->folder_path);
-                send(new_sock, files_list, MAX_NAME_LEN * MAX_NUM_OF_FILES + 1, 0);
+                send(new_sock, files_list, MAX_NAME_LEN * MAX_NUM_OF_FILES, 0);
                 free(files_list);
 
             } else if (usr_command == DELETE_FILE_CMND) {
