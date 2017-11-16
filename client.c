@@ -92,8 +92,8 @@ int main(int argc, char** argv){
         strcpy(password_input, password_input + 10);
         password_input[strlen(password_input) - 1] = '\0';
 
-        send(sock, username_input, MAX_NAME_LEN, 0);
-        send(sock, password_input, MAX_NAME_LEN, 0);
+        send(sock, username_input, strlen(username_input)+1, 0);
+        send(sock, password_input, strlen(password_input)+1, 0);
 
         recv(sock, &msg, sizeof(int), 0);
         if (msg == LOGIN_SUCCESS_MSG) {
@@ -111,7 +111,7 @@ int main(int argc, char** argv){
 
     // While not quitting, keep the connection on and get commands from user
 
-    bool quit;
+    bool quit = false;
     char usr_command_str[MAX_STR_LEN];
     char* file_data;
     int server_response;
@@ -130,7 +130,7 @@ int main(int argc, char** argv){
         // delete_file
         } else if (strncmp(usr_command_str, "delete_file ", strlen("delete_file ")) == 0) {
             send(sock, &DELETE_FILE_CMND, sizeof(int), 0);
-            send(sock, usr_command_str + strlen("delete_file "), MAX_STR_LEN, 0);
+            send(sock, usr_command_str + strlen("delete_file "), strlen(usr_command_str + strlen("delete_file "))+1, 0);
 
             recv(sock, &server_response, sizeof(int), 0);
             if (server_response == OPERATION_SUCCESSFUL)
@@ -158,8 +158,8 @@ int main(int argc, char** argv){
             }
 
             send(sock, &ADD_FILE_CMND, sizeof(int), 0);
-            send(sock, file_name, sizeof(file_name), 0); // Send required file name
-            send(sock, file_data, MAX_FILE_LENGTH, 0); // Send the file data
+            send(sock, file_name, strlen(file_name)+1, 0); // Send required file name
+            send(sock, file_data, strlen(file_data)+1, 0); // Send the file data
             free(file_data);
 
             recv(sock, &server_response, sizeof(int), 0);
@@ -182,7 +182,7 @@ int main(int argc, char** argv){
             }
             checkPathFormat(path_arg);
             send(sock, &GET_FILE_CMND, sizeof(int), 0);
-            send(sock, file_name, sizeof(file_name), 0); // Send required file name
+            send(sock, file_name, strlen(file_name)+1, 0); // Send required file name
 
             recv(sock, &server_response, sizeof(int), 0);
             if (server_response == OPERATION_FAILED) {
@@ -228,7 +228,7 @@ int saveDataToFile(char data[MAX_FILE_LENGTH], char path_to_save[MAX_DIRPATH_LEN
 
 
 char* fileToStr(char file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {
-    char* file_text = (char*)malloc(sizeof(char)*MAX_FILE_LENGTH);
+    char* file_text = (char*)calloc(MAX_FILE_LENGTH, sizeof(char));
     FILE* fp = fopen(file_path, "r");
     if (fp == NULL)
         return NULL;

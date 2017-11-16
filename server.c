@@ -71,8 +71,8 @@ int main(int argc, char** argv){
     socklen_t addr_size;
     addr_size = sizeof(client_addr);
 
-    bool logged_in;
-    bool quit;
+    bool logged_in = false;
+    bool quit = false;
     User usr_from_client;
     User *logged_usr;
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv){
         new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
 
         // Send hello message to client
-        send(new_sock, HELLO_STR ,MAX_STR_LEN, 0);
+        send(new_sock, HELLO_STR, strlen(HELLO_STR)+1, 0);
 
         logged_in = false;
         quit = false;
@@ -119,7 +119,7 @@ int main(int argc, char** argv){
             } else if (usr_command == LIST_OF_FILES_CMND) {
                 char* files_list;
                 files_list = getListOfFiles(logged_usr->folder_path);
-                send(new_sock, files_list, MAX_NAME_LEN * MAX_NUM_OF_FILES, 0);
+                send(new_sock, files_list, strlen(files_list)+1, 0);
                 free(files_list);
 
             } else if (usr_command == DELETE_FILE_CMND) {
@@ -162,7 +162,7 @@ int main(int argc, char** argv){
                     continue;
                 }
                 send(new_sock, &successful, sizeof(int), 0);
-                send(new_sock, data, MAX_FILE_LENGTH, 0);
+                send(new_sock, data, strlen(data)+1, 0);
                 free(data);
 
             } else if (usr_command == QUIT_CMND) {
