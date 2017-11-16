@@ -256,7 +256,7 @@ bool checkCredentials(User usr_from_client, User **logged_usr) {
 char* getListOfFiles(char folder_path[MAX_DIRPATH_LEN]) {
     DIR* dirp;
     struct dirent* entry;
-    char* list_of_files = (char*)malloc(sizeof(char)*MAX_NAME_LEN*MAX_NUM_OF_FILES);
+    char* list_of_files = (char*)calloc(sizeof(char)*MAX_NAME_LEN*MAX_NUM_OF_FILES, sizeof(char));
 
     dirp = opendir(folder_path);
     if (dirp == NULL)

@@ -1,14 +1,12 @@
 #include "auxiliary.h"
 
-#define HELLO_STR "Welcome! Please log in.\n"
 #define BACKLOG_SIZE 5
-
+char HELLO_STR[MAX_STR_LEN] = "Welcome! Please log in.\n";
 
 typedef struct User {
     char username[MAX_NAME_LEN];
     char password[MAX_NAME_LEN];
     char folder_path[MAX_DIRPATH_LEN];
-    int num_of_files;
 } User;
 
 User users[MAX_NUM_USERS];
