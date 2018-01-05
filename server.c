@@ -195,7 +195,7 @@ int makeUsersList(char* userFilePath){
 int openDirectories(char* dirpath) {
     int i;
     FILE *fp;
-    for (i=0; i< numUsers; i++) {
+    for (i = 0; i< numUsers; i++) {
         char tempstr[MAX_DIRPATH_LEN];
         strcpy(tempstr, dirpath);
         char* directoryToOpen = strcat(tempstr,users[i].username);
@@ -229,7 +229,7 @@ bool folderExists(char* dirpath) {
 
 bool checkCredentials(User usr_from_client, User **logged_usr) {
     int i;
-    for (i=0; i < numUsers; i++ ){
+    for (i = 0; i < numUsers; i++ ){
         if ((strcmp(users[i].username,usr_from_client.username) == 0) && (strcmp(users[i].password, usr_from_client.password) == 0)) {
             *logged_usr = &(users[i]);
             return true;
@@ -377,8 +377,12 @@ int processCommand(int usr_command, User *logged_usr, int fd) {
         if (recvStr(fd, message) == ERR_RETURN_CODE) // Get required message
             return ERR_RETURN_CODE;
 
-        char *final_message = (char*)calloc(FINAL_MSG_LEN, 1);
         User* dest_usr = getUserByName(user_name);
+        if (!dest_usr) {
+            return NO_COMMAND_EXECUTED;
+        }
+
+        char *final_message = (char*)calloc(FINAL_MSG_LEN, 1);
         bool online = isFdLoggedIn(dest_usr->sock_fd);
         formatMessage(logged_usr->username, message, online, final_message);
         if (online) {
@@ -390,6 +394,7 @@ int processCommand(int usr_command, User *logged_usr, int fd) {
         }
         else {
             if (addToMessageFile(dest_usr, final_message) == ERR_RETURN_CODE) {
+                printf("Error: writing to offline messages file of user: %s", dest_usr->username);
                 free(final_message);
                 return ERR_RETURN_CODE;
             }
@@ -397,11 +402,13 @@ int processCommand(int usr_command, User *logged_usr, int fd) {
         }
     } else if (usr_command == READ_CMND) {
         int curr_msg_size = FINAL_MSG_LEN;
-        char *curr_message = (char *)malloc(curr_msg_size);
+        char *curr_message = (char *)malloc((size_t) curr_msg_size);
         char file_path[strlen(MESSAGE_FILE) + MAX_DIRPATH_LEN];
         strcpy(file_path, logged_usr->folder_path);
         FILE *fp = fopen(strcat(file_path, MESSAGE_FILE), "r");
-        if (fp == NULL){
+        if (fp == NULL) {
+            free(curr_message);
+            printf("Error: offline messages file does not exist for user: %s\n", logged_usr->username);
             return ERR_RETURN_CODE;
         }
         // Send messages line-by-line until reaching EOF
@@ -449,7 +456,7 @@ void formatMessage(char *user_name, char *message, bool online, char* output) {
 
 User *getUserByName(char* user_name) {
     int i;
-    for (i=0; i < MAX_NUM_USERS; i++)
+    for (i = 0; i < MAX_NUM_USERS; i++)
         if (strcmp(user_name, users[i].username) == 0)
             return &(users[i]);
     return NULL;
