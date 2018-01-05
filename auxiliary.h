@@ -15,17 +15,27 @@
 #define MAX_NUM_OF_FILES 15
 #define MAX_NUM_USERS 15
 #define MAX_FILE_LENGTH 2048
+#define CRED_LEN 2*MAX_NAME_LEN + 3
 
 #define SUCCESS_RETURN_CODE 0
 #define ERR_RETURN_CODE -1
+#define INVALID_FD -1
+#define COMMAND_EXECUTED 1
+#define NO_COMMAND_EXECUTED 0
+#define EOF_MSGS_FILE "FINISHED"
 
 #define DEFAULT_PORT 1337
 #define MAX_STR_LEN 64
+#define MAX_MSG_LEN 100
+#define FINAL_MSG_LEN strlen("Message received from ") + MAX_MSG_LEN + MAX_NAME_LEN + 3
 
 extern int LIST_OF_FILES_CMND;
 extern int DELETE_FILE_CMND;
 extern int ADD_FILE_CMND;
 extern int GET_FILE_CMND;
+extern int MSG_CMND;
+extern int READ_CMND;
+extern int ONLINE_USRS_CMND;
 extern int QUIT_CMND;
 
 extern int OPERATION_SUCCESSFUL;

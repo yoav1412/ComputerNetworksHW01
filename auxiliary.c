@@ -5,6 +5,9 @@ int LIST_OF_FILES_CMND = 1;
 int DELETE_FILE_CMND = 2;
 int ADD_FILE_CMND = 3;
 int GET_FILE_CMND = 4;
+int MSG_CMND = 6;
+int READ_CMND = 7;
+int ONLINE_USRS_CMND = 8;
 int QUIT_CMND = 5;
 
 int OPERATION_SUCCESSFUL = 1;
@@ -23,6 +26,7 @@ char* strmove(char* str1, char* str2){
 char* fileToStr(char file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN]) {
     char* file_text = (char*)calloc(MAX_FILE_LENGTH, sizeof(char));
     FILE* fp = fopen(file_path, "r");
+
     if (fp == NULL)
         return NULL;
 

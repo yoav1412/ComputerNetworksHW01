@@ -6,6 +6,10 @@
 int main(int argc, char** argv){
     int port = DEFAULT_PORT;
     int input_port;
+    int usr_command;
+    int retval;
+    fd_set master;
+    fd_set read_fds;
     if (argc < 3 || argc > 4){
         printf("Error: wrong number of args\n");
         return 1;
@@ -29,7 +33,7 @@ int main(int argc, char** argv){
 
     //Open socket and listen
 
-    int sock = 0;
+    int listener_sock = 0;
     struct addrinfo hints, *servinfo, *p;
     char port_str[MAX_STR_LEN];
     sprintf(port_str, "%d", port);
@@ -45,13 +49,13 @@ int main(int argc, char** argv){
     }
 
     for (p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+        if ((listener_sock = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
             continue;
         }
         int enable = 1;
-        setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int) );
-        if (bind(sock, p->ai_addr, p->ai_addrlen) == -1) {
-            close(sock);
+        setsockopt(listener_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int) );
+        if (bind(listener_sock, p->ai_addr, p->ai_addrlen) == -1) {
+            close(listener_sock);
             continue;
         }
         break; // if successful, stop the loop.
@@ -64,122 +68,82 @@ int main(int argc, char** argv){
 
     freeaddrinfo(servinfo);
 
-    listen(sock, BACKLOG_SIZE);
+    listen(listener_sock, BACKLOG_SIZE);
 
-    int new_sock;
+    int new_sock = 0;
     struct sockaddr_storage client_addr;
     socklen_t addr_size;
-    addr_size = sizeof(client_addr);
 
-    bool logged_in = false;
-    bool quit = false;
     User usr_from_client;
     User *logged_usr;
 
+    // Prepare fd's set
+    FD_ZERO(&master);
+    FD_ZERO(&read_fds);
+    FD_SET(listener_sock, &master);
+    updateMax(listener_sock);
+
     while (1) {
-
-        new_sock = accept(sock, (struct sockaddr *) &client_addr, &addr_size);
-
-        // Send hello message to client
-        if (sendStr(new_sock, HELLO_STR) == ERR_RETURN_CODE)
+        read_fds = master;
+        if (select(max_fd+1, &read_fds, NULL, NULL, NULL) == -1)
             return ERR_RETURN_CODE;
 
-        logged_in = false;
-        quit = false;
+        for (int i = 0; i <= max_fd; i++){
+            // Find ready fd's
+            if (FD_ISSET(i, &read_fds)) {
 
-        // Login phase
-        while (!quit && !logged_in) {
-            if (recvStr(new_sock, usr_from_client.username) == ERR_RETURN_CODE)
-                return ERR_RETURN_CODE;
-            if (recvStr(new_sock, usr_from_client.password) == ERR_RETURN_CODE)
-                return ERR_RETURN_CODE;
+                // If this is the listener socket
+                if (i == listener_sock) {
+                    // Register new socket for this client
+                    addr_size = sizeof(client_addr);
+                    new_sock = accept(listener_sock, (struct sockaddr *) &client_addr, &addr_size);
+                    if (new_sock == -1) return ERR_RETURN_CODE;
+                    FD_SET(new_sock, &master);
+                    updateMax(new_sock);
 
-            if (checkCredentials(usr_from_client, &logged_usr)) {
-                logged_in = true;
-                send(new_sock, &LOGIN_SUCCESS_MSG, sizeof(int), 0);
-            } else {
-                send(new_sock, &LOGIN_FAILED_MSG, sizeof(int), 0);
-            }
-        }
-
-        // Logged in successfully.
-        // Send number of files for the logged in user
-        int user_num_files = getNumOfFiles(*logged_usr);
-        send(new_sock, &user_num_files, sizeof(int), 0);
-
-        int usr_command;
-        char file_name[MAX_NAME_LEN];
-        char file_data[MAX_FILE_LENGTH];
-
-        // Get commands from user until it quits
-
-        while (!quit) {
-            recv(new_sock, &usr_command, sizeof(int), 0);
-
-            if (usr_command == QUIT_CMND) {
-                quit = true;
-
-            } else if (usr_command == LIST_OF_FILES_CMND) {
-                char* files_list;
-                files_list = getListOfFiles(logged_usr->folder_path);
-                if (sendStr(new_sock, files_list) == ERR_RETURN_CODE)
-                    return ERR_RETURN_CODE;
-                free(files_list);
-
-            } else if (usr_command == DELETE_FILE_CMND) {
-                if (recvStr(new_sock, file_name) == ERR_RETURN_CODE) // receive the argument: file name
-                    return ERR_RETURN_CODE;
-
-                file_name[strlen(file_name)-1] = '\0';
-                char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
-                strcpy(full_file_path, logged_usr->folder_path);
-                strcat(full_file_path, "/");
-                strcat(full_file_path, file_name);
-
-                int deleted = deleteFile(full_file_path);
-                send(new_sock, &deleted, sizeof(int), 0);
-
-            } else if (usr_command == ADD_FILE_CMND) {
-                if (recvStr(new_sock, file_name) == ERR_RETURN_CODE) // Get required file name
-                    return ERR_RETURN_CODE;
-                if (recvStr(new_sock, file_data) == ERR_RETURN_CODE) // Get the file data
-                    return ERR_RETURN_CODE;
-
-                char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
-                strcpy(full_file_path, logged_usr->folder_path);
-                strcat(full_file_path, "/");
-                strcat(full_file_path, file_name);
-
-                int created = saveDataToFile(file_data, full_file_path);
-                send(new_sock, &created, sizeof(int), 0);
-
-            } else if (usr_command == GET_FILE_CMND) {
-                if (recvStr(new_sock, file_name) == ERR_RETURN_CODE) // Get required file name
-                    return ERR_RETURN_CODE;
-                char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
-                strcpy(full_file_path, logged_usr->folder_path);
-                strcat(full_file_path, "/");
-                strcat(full_file_path, file_name);
-
-                char* data;
-                int successful = OPERATION_SUCCESSFUL;
-                data = fileToStr(full_file_path);
-                if (data == NULL) {
-                    successful = OPERATION_FAILED;
-                    send(new_sock, &successful, sizeof(int), 0);
-                    continue;
+                    // Send hello message to client
+                    if (sendStr(new_sock, HELLO_STR) == ERR_RETURN_CODE)
+                        return ERR_RETURN_CODE;
                 }
-                send(new_sock, &successful, sizeof(int), 0);
-                if (sendStr(new_sock, data) == ERR_RETURN_CODE)
-                    return ERR_RETURN_CODE;
-                free(data);
 
-            } else if (usr_command == QUIT_CMND) {
-                close(new_sock);
-                quit = true;
+                // If this is a client in the login sequence
+                else if (i != listener_sock && !isFdLoggedIn(i)) {
+                    if (recvCredentials(i, &usr_from_client) == ERR_RETURN_CODE)
+                        return ERR_RETURN_CODE;
+
+                    if (checkCredentials(usr_from_client, &logged_usr)) {
+                        // Logged in successfully.
+                        logged_usr->logged_in = true;
+                        logged_usr->sock_fd = i;
+                        send(i, &LOGIN_SUCCESS_MSG, sizeof(int), 0);
+
+                        // Send number of files for the logged in user
+                        int user_num_files = getNumOfFiles(*logged_usr);
+                        send(i, &user_num_files, sizeof(int), 0);
+                    } else {
+                        send(i, &LOGIN_FAILED_MSG, sizeof(int), 0);
+                    }
+                }
+
+                // If this is an already logged in client
+                else {
+                    logged_usr = getUserFromFd(i);
+                    if (logged_usr == NULL)
+                        continue;
+
+                    // Process user command
+                    recv(i, &usr_command, sizeof(int), 0);
+                    retval = processCommand(usr_command, logged_usr, i);
+
+                    if (retval == ERR_RETURN_CODE)
+                        return ERR_RETURN_CODE;
+
+                    // If user quitted
+                    if (retval == QUIT_CMND)
+                        FD_CLR(i, &master);
+                }
             }
         }
-
     }
 
     return SUCCESS_RETURN_CODE;
@@ -218,6 +182,8 @@ int makeUsersList(char* userFilePath){
     while (fgets(str,2*MAX_NAME_LEN +2,users_file) != NULL) {
         strcpy(user.username, strtok(str,"\t"));
         strcpy(user.password, strtok(NULL,"\n"));
+        user.logged_in = false;
+        user.sock_fd = INVALID_FD;
         users[i] = user;
         i++;
     }
@@ -227,17 +193,26 @@ int makeUsersList(char* userFilePath){
 
 int openDirectories(char* dirpath) {
     int i;
+    FILE *fp;
     for (i=0; i< numUsers; i++) {
         char tempstr[MAX_DIRPATH_LEN];
         strcpy(tempstr, dirpath);
         char* directoryToOpen = strcat(tempstr,users[i].username);
         strcpy(users[i].folder_path, directoryToOpen);
         if (folderExists(directoryToOpen)) { // If exists
+            if ((fp = fopen(strcat(directoryToOpen,MESSAGE_FILE), "w")) == NULL)
+                return ERR_RETURN_CODE;
+            fclose(fp);
             continue;
         }
+
+        // Make the directory and add a message buffer file
         if (mkdir(directoryToOpen, 0777) != 0) {
             return ERR_RETURN_CODE;
-        };
+        }
+        if ((fp = fopen(strcat(directoryToOpen,MESSAGE_FILE), "w")) == NULL)
+            return ERR_RETURN_CODE;
+        fclose(fp);
     }
     return SUCCESS_RETURN_CODE;
 }
@@ -288,3 +263,217 @@ int deleteFile(char file_path[MAX_NAME_LEN]) {
     return OPERATION_SUCCESSFUL;
 }
 
+void updateMax(int new_fd) {
+    max_fd = new_fd > max_fd ? new_fd : max_fd;
+}
+
+bool isFdLoggedIn(int fd) {
+    User *user = getUserFromFd(fd);
+    if (user != NULL)
+        return user->logged_in;
+    return false;
+}
+
+int recvCredentials(int new_sock, User *usr_from_client) {
+    char buffer[CRED_LEN];
+    if (recvStr(new_sock, buffer) == -1)
+        return ERR_RETURN_CODE;
+    char *username = strtok(buffer, "\n");
+    char *password = strtok(NULL, "\n");
+
+    strcpy(usr_from_client->username, username);
+    strcpy(usr_from_client->password, password);
+    return SUCCESS_RETURN_CODE;
+}
+
+User *getUserFromFd(int fd) {
+    for (int i = 0; i < MAX_NUM_USERS; i++) {
+        if (users[i].sock_fd == fd)
+            return &(users[i]);
+    }
+    return NULL;
+}
+
+int processCommand(int usr_command, User *logged_usr, int fd) {
+    char file_name[MAX_NAME_LEN];
+    char file_data[MAX_FILE_LENGTH];
+
+    if (usr_command == LIST_OF_FILES_CMND) {
+        char* files_list;
+        files_list = getListOfFiles(logged_usr->folder_path);
+        if (sendStr(fd, files_list) == ERR_RETURN_CODE) {
+            free(files_list);
+            return ERR_RETURN_CODE;
+        }
+        free(files_list);
+        return COMMAND_EXECUTED;
+    }
+    else if (usr_command == QUIT_CMND) {
+        logged_usr->logged_in = false;
+        logged_usr->sock_fd = INVALID_FD;
+        close(fd);
+        return QUIT_CMND;
+    }
+    else if (usr_command == DELETE_FILE_CMND) {
+        if (recvStr(fd, file_name) == ERR_RETURN_CODE) // receive the argument: file name
+            return ERR_RETURN_CODE;
+
+        file_name[strlen(file_name)-1] = '\0';
+        char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
+        strcpy(full_file_path, logged_usr->folder_path);
+        strcat(full_file_path, "/");
+        strcat(full_file_path, file_name);
+
+        int deleted = deleteFile(full_file_path);
+        send(fd, &deleted, sizeof(int), 0);
+        return COMMAND_EXECUTED;
+
+    } else if (usr_command == ADD_FILE_CMND) {
+        if (recvStr(fd, file_name) == ERR_RETURN_CODE) // Get required file name
+            return ERR_RETURN_CODE;
+        if (recvStr(fd, file_data) == ERR_RETURN_CODE) // Get the file data
+            return ERR_RETURN_CODE;
+
+        char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
+        strcpy(full_file_path, logged_usr->folder_path);
+        strcat(full_file_path, "/");
+        strcat(full_file_path, file_name);
+
+        int created = saveDataToFile(file_data, full_file_path);
+        send(fd, &created, sizeof(int), 0);
+        return COMMAND_EXECUTED;
+
+    } else if (usr_command == GET_FILE_CMND) {
+        if (recvStr(fd, file_name) == ERR_RETURN_CODE) // Get required file name
+            return ERR_RETURN_CODE;
+        char full_file_path[MAX_DIRPATH_LEN + MAX_NAME_LEN];
+        strcpy(full_file_path, logged_usr->folder_path);
+        strcat(full_file_path, "/");
+        strcat(full_file_path, file_name);
+
+        char* data;
+        int successful = OPERATION_SUCCESSFUL;
+        data = fileToStr(full_file_path);
+        if (data == NULL) {
+            successful = OPERATION_FAILED;
+            send(fd, &successful, sizeof(int), 0);
+            return COMMAND_EXECUTED;
+        }
+        send(fd, &successful, sizeof(int), 0);
+        if (sendStr(fd, data) == ERR_RETURN_CODE) {
+            free(data);
+            return ERR_RETURN_CODE;
+        }
+        free(data);
+        return COMMAND_EXECUTED;
+    } else if (usr_command == MSG_CMND) {
+        char user_name[MAX_NAME_LEN];
+        char message[MAX_MSG_LEN];
+
+        if (recvStr(fd, user_name) == ERR_RETURN_CODE) // Get required user name
+            return ERR_RETURN_CODE;
+        if (recvStr(fd, message) == ERR_RETURN_CODE) // Get required message
+            return ERR_RETURN_CODE;
+
+        char *final_message = (char*)calloc(FINAL_MSG_LEN, 1);
+        User* dest_usr = getUserByName(user_name);
+        bool online = isFdLoggedIn(dest_usr->sock_fd);
+        formatMessage(logged_usr->username, message, online, final_message);
+        if (online) {
+            if (sendStr(dest_usr->sock_fd, final_message) == ERR_RETURN_CODE) {
+                free(final_message);
+                return ERR_RETURN_CODE;
+            }
+            free(final_message);
+        }
+        else {
+            if (addToMessageFile(dest_usr, final_message) == ERR_RETURN_CODE) {
+                free(final_message);
+                return ERR_RETURN_CODE;
+            }
+            free(final_message);
+        }
+    } else if (usr_command == READ_CMND) {
+        int curr_msg_size = FINAL_MSG_LEN;
+        char *curr_message = (char *)malloc(curr_msg_size);
+        char file_path[strlen(MESSAGE_FILE) + MAX_DIRPATH_LEN];
+        strcpy(file_path, logged_usr->folder_path);
+        FILE *fp = fopen(strcat(file_path, MESSAGE_FILE), "r");
+
+        // Send messages line-by-line until reaching EOF
+        while (fgets(curr_message, curr_msg_size + 1, fp) != NULL) {
+            if (sendStr(fd, curr_message) == ERR_RETURN_CODE) {
+                free(curr_message);
+                fclose(fp);
+                return ERR_RETURN_CODE;
+            }
+        }
+
+        if (sendStr(fd, EOF_MSGS_FILE) == ERR_RETURN_CODE) {
+            free(curr_message);
+            fclose(fp);
+            return ERR_RETURN_CODE;
+        }
+
+        fclose(fp);
+        fclose(fopen(file_path, "w")); // Erase file content
+        free(curr_message);
+
+    } else if (usr_command == ONLINE_USRS_CMND) {
+        char message[MAX_NUM_USERS*(MAX_NAME_LEN + 1)];
+        memset(message, '\0', MAX_NUM_USERS*(MAX_NAME_LEN + 1));
+        getOnlineUsersString(message);
+
+        if (sendStr(fd, message) == ERR_RETURN_CODE) {
+            return ERR_RETURN_CODE;
+        }
+    }
+
+    return NO_COMMAND_EXECUTED;
+}
+
+void formatMessage(char *user_name, char *message, bool online, char* output) {
+    if (online)
+        strcat(output,"New message from ");
+    else
+        strcat(output, "Message received from ");
+    strcat(output, user_name);
+    strcat(output, ": ");
+    strcat(output, message);
+    strcat(output, "\n");
+}
+
+User *getUserByName(char* user_name) {
+    for (int i=0; i < MAX_NUM_USERS; i++)
+        if (strcmp(user_name, users[i].username) == 0)
+            return &(users[i]);
+    return NULL;
+}
+
+int addToMessageFile(User *dest_usr, char *final_message) {
+    char file_path[strlen(MESSAGE_FILE) + MAX_DIRPATH_LEN];
+    strcpy(file_path, dest_usr->folder_path);
+    FILE *fp = fopen(strcat(file_path, MESSAGE_FILE), "a");
+    if (fp == NULL)
+        return ERR_RETURN_CODE;
+
+    if (fwrite(final_message, sizeof(char), strlen(final_message), fp) < 0) {
+        fclose(fp);
+        return ERR_RETURN_CODE;
+    }
+    fclose(fp);
+    return SUCCESS_RETURN_CODE;
+};
+
+void getOnlineUsersString(char *output) {
+    bool isFirst = true;
+    for (int i = 0; i < MAX_NUM_USERS; i++) {
+        if (users[i].logged_in) {
+            if (!isFirst) {
+                strcat(output, ",");
+            }
+            strcat(output, users[i].username);
+            isFirst = false;
+        }
+    }
+}
