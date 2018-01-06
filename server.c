@@ -399,7 +399,9 @@ int processCommand(int usr_command, User *logged_usr, int fd) {
         char file_path[strlen(MESSAGE_FILE) + MAX_DIRPATH_LEN];
         strcpy(file_path, logged_usr->folder_path);
         FILE *fp = fopen(strcat(file_path, MESSAGE_FILE), "r");
-
+        if (fp == NULL){
+            return ERR_RETURN_CODE;
+        }
         // Send messages line-by-line until reaching EOF
         while (fgets(curr_message, curr_msg_size + 1, fp) != NULL) {
             if (sendStr(fd, curr_message) == ERR_RETURN_CODE) {
