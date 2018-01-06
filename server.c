@@ -8,6 +8,7 @@ int main(int argc, char** argv){
     int input_port;
     int usr_command;
     int retval;
+    int i;
     fd_set master;
     fd_set read_fds;
     if (argc < 3 || argc > 4){
@@ -88,7 +89,7 @@ int main(int argc, char** argv){
         if (select(max_fd+1, &read_fds, NULL, NULL, NULL) == -1)
             return ERR_RETURN_CODE;
 
-        for (int i = 0; i <= max_fd; i++){
+        for (i = 0; i <= max_fd; i++){
             // Find ready fd's
             if (FD_ISSET(i, &read_fds)) {
 
@@ -287,7 +288,8 @@ int recvCredentials(int new_sock, User *usr_from_client) {
 }
 
 User *getUserFromFd(int fd) {
-    for (int i = 0; i < MAX_NUM_USERS; i++) {
+    int i;
+    for (i = 0; i < MAX_NUM_USERS; i++) {
         if (users[i].sock_fd == fd)
             return &(users[i]);
     }
@@ -446,7 +448,8 @@ void formatMessage(char *user_name, char *message, bool online, char* output) {
 }
 
 User *getUserByName(char* user_name) {
-    for (int i=0; i < MAX_NUM_USERS; i++)
+    int i;
+    for (i=0; i < MAX_NUM_USERS; i++)
         if (strcmp(user_name, users[i].username) == 0)
             return &(users[i]);
     return NULL;
@@ -468,8 +471,9 @@ int addToMessageFile(User *dest_usr, char *final_message) {
 };
 
 void getOnlineUsersString(char *output) {
+    int i;
     bool isFirst = true;
-    for (int i = 0; i < MAX_NUM_USERS; i++) {
+    for (i = 0; i < MAX_NUM_USERS; i++) {
         if (users[i].logged_in) {
             if (!isFirst) {
                 strcat(output, ",");
